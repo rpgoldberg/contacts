@@ -104,3 +104,28 @@ async def unshare_with_user(
     await db.flush()
 
     return {"message": f"Removed sharing with {username}"}
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    password_change: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change current user's password."""
+    from app.auth import verify_password
+
+    # Verify current password
+    if not verify_password(password_change.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    # Update password
+    current_user.hashed_password = hash_password(password_change.new_password)
+    await db.flush()
+
+    return {"message": "Password changed successfully"}

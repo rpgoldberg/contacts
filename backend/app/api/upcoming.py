@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models import Person
+from app.models.user import User
+from app.auth import get_current_user, get_accessible_user_ids
 
 router = APIRouter()
 
@@ -23,12 +25,17 @@ class UpcomingEvent(BaseModel):
 async def upcoming_birthdays(
     days: int = Query(30, ge=1, le=365, description="Number of days to look ahead"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get upcoming birthdays within the specified number of days."""
     today = date.today()
+    accessible_ids = get_accessible_user_ids(current_user)
 
-    # Get all persons with birth dates
-    query = select(Person).where(Person.birth_date.isnot(None))
+    # Get all persons with birth dates for accessible users
+    query = select(Person).where(
+        Person.birth_date.isnot(None),
+        Person.owner_id.in_(accessible_ids)
+    )
     result = await db.execute(query)
     persons = result.scalars().all()
 
@@ -70,12 +77,17 @@ async def upcoming_birthdays(
 async def upcoming_anniversaries(
     days: int = Query(30, ge=1, le=365, description="Number of days to look ahead"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get upcoming anniversaries within the specified number of days."""
     today = date.today()
+    accessible_ids = get_accessible_user_ids(current_user)
 
-    # Get all persons with anniversary dates
-    query = select(Person).where(Person.anniversary_date.isnot(None))
+    # Get all persons with anniversary dates for accessible users
+    query = select(Person).where(
+        Person.anniversary_date.isnot(None),
+        Person.owner_id.in_(accessible_ids)
+    )
     result = await db.execute(query)
     persons = result.scalars().all()
 
@@ -116,10 +128,11 @@ async def upcoming_anniversaries(
 async def upcoming_all(
     days: int = Query(30, ge=1, le=365, description="Number of days to look ahead"),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all upcoming events (birthdays and anniversaries)."""
-    birthdays = await upcoming_birthdays(days=days, db=db)
-    anniversaries = await upcoming_anniversaries(days=days, db=db)
+    birthdays = await upcoming_birthdays(days=days, db=db, current_user=current_user)
+    anniversaries = await upcoming_anniversaries(days=days, db=db, current_user=current_user)
 
     all_events = birthdays + anniversaries
     return sorted(all_events, key=lambda x: x.days_until)
