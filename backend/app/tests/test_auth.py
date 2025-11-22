@@ -400,3 +400,62 @@ class TestSharing:
         data = response.json()
         assert len(data) == 1
         assert data[0]["name"] == "Person, Birthday"
+
+
+class TestUserSearch:
+    """Test user search for sharing autocomplete."""
+
+    async def test_search_users_by_prefix(
+        self,
+        authenticated_client: AsyncClient,
+        other_user,
+    ):
+        """Can search users by username prefix."""
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=other")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["username"] == "otheruser"
+
+    async def test_search_users_no_results(self, authenticated_client: AsyncClient):
+        """Returns empty list when no users match."""
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=nobody")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 0
+
+    async def test_search_users_excludes_self(
+        self,
+        authenticated_client: AsyncClient,
+    ):
+        """Search results exclude the current user."""
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=test")
+        assert response.status_code == 200
+        data = response.json()
+        # testuser should not appear in results
+        usernames = [u["username"] for u in data]
+        assert "testuser" not in usernames
+
+    async def test_search_users_case_insensitive(
+        self,
+        authenticated_client: AsyncClient,
+        other_user,
+    ):
+        """Search is case insensitive."""
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=OTHER")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["username"] == "otheruser"
+
+    async def test_search_users_requires_auth(self, client: AsyncClient):
+        """User search requires authentication."""
+        response = await client.get("/api/v1/auth/users?prefix=test")
+        assert response.status_code == 401
+
+    async def test_search_users_minimum_prefix(self, authenticated_client: AsyncClient):
+        """Prefix must be at least 1 character."""
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 0

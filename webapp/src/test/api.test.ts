@@ -336,3 +336,39 @@ describe("More Upcoming Events", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/upcoming/all?days=90", expect.any(Object));
   });
 });
+
+import { searchUsers } from "@/lib/api";
+
+describe("User Search API", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("searches users by prefix", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ id: 1, username: "testuser" }]),
+    });
+
+    const result = await searchUsers("test");
+    expect(result).toHaveLength(1);
+    expect(result[0].username).toBe("testuser");
+    expect(mockFetch).toHaveBeenCalledWith("/api/auth/users?prefix=test", expect.any(Object));
+  });
+
+  it("returns empty array for empty prefix", async () => {
+    const result = await searchUsers("");
+    expect(result).toHaveLength(0);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("URL encodes special characters", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+
+    await searchUsers("test@user");
+    expect(mockFetch).toHaveBeenCalledWith("/api/auth/users?prefix=test%40user", expect.any(Object));
+  });
+});

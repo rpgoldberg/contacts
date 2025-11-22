@@ -24,6 +24,8 @@ async def list_persons(
     current_user: User = Depends(get_current_user),
     search: Optional[str] = Query(None, description="Search by name"),
     relation: Optional[str] = Query(None, description="Filter by relation type"),
+    dr_filter: bool = Query(False, description="Filter names starting with Dr."),
+    sort_by: str = Query("last", description="Sort by 'first' or 'last' name"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
 ):
@@ -42,7 +44,25 @@ async def list_persons(
     if relation:
         query = query.where(Person.relation == relation)
 
-    query = query.order_by(Person.last_name, Person.first_name).offset(skip).limit(limit)
+    if dr_filter:
+        # Filter names starting with "Dr." or "Dr " (case insensitive)
+        from sqlalchemy import or_, func
+        query = query.where(
+            or_(
+                func.lower(Person.first_name).like("dr.%"),
+                func.lower(Person.first_name).like("dr %"),
+                func.lower(Person.last_name).like("dr.%"),
+                func.lower(Person.last_name).like("dr %"),
+            )
+        )
+
+    # Apply sorting
+    if sort_by == "first":
+        query = query.order_by(Person.first_name, Person.last_name)
+    else:
+        query = query.order_by(Person.last_name, Person.first_name)
+
+    query = query.offset(skip).limit(limit)
 
     result = await db.execute(query)
     persons = result.scalars().all()

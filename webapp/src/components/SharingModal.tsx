@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, UserPlus, Trash2, Loader2 } from "lucide-react";
-import { getCurrentUser, shareWith, unshareWith, UserInfo } from "@/lib/api";
+import { getCurrentUser, shareWith, unshareWith, searchUsers, UserInfo, UserSearchResult } from "@/lib/api";
 
 interface SharingModalProps {
   isOpen: boolean;
@@ -15,12 +15,53 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<UserSearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadUser();
     }
   }, [isOpen]);
+
+  // Debounced search for username suggestions
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (!newUsername.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchUsers(newUsername.trim());
+        // Filter out users already shared with
+        const filtered = results.filter(
+          (u) => !user?.shared_with.includes(u.username)
+        );
+        setSuggestions(filtered);
+        setShowSuggestions(filtered.length > 0);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [newUsername, user?.shared_with]);
 
   const loadUser = async () => {
     setLoading(true);
@@ -35,12 +76,21 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
     }
   };
 
+  const selectSuggestion = (username: string) => {
+    setNewUsername(username);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
+
   const handleShare = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername.trim()) return;
 
     setActionLoading("add");
     setError("");
+    setSuggestions([]);
+    setShowSuggestions(false);
     try {
       const updatedUser = await shareWith(newUsername.trim());
       setUser(updatedUser);
@@ -109,13 +159,36 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
 
               {/* Add new share */}
               <form onSubmit={handleShare} className="flex gap-2">
-                <input
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  placeholder="Enter username"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder="Enter username"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                  {searchLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    </div>
+                  )}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-auto">
+                      {suggestions.map((s) => (
+                        <li
+                          key={s.id}
+                          onClick={() => selectSuggestion(s.username)}
+                          className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
+                        >
+                          {s.username}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <button
                   type="submit"
                   disabled={actionLoading === "add" || !newUsername.trim()}

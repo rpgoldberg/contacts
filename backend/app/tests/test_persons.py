@@ -87,6 +87,124 @@ class TestPersonsAPI:
         assert len(data) == 1
         assert data[0]["first_name"] == "Family"
 
+    async def test_filter_by_dr(self, authenticated_client: AsyncClient):
+        """Test filtering persons with Dr. prefix in name."""
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Dr. John", "last_name": "Smith"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Jane", "last_name": "Dr. Jones"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Bob", "last_name": "Builder"}
+        )
+
+        response = await authenticated_client.get("/api/v1/persons/?dr_filter=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        names = [p["first_name"] for p in data]
+        assert "Dr. John" in names
+        assert "Jane" in names  # Has "Dr." in last name
+
+    async def test_dr_filter_case_insensitive(self, authenticated_client: AsyncClient):
+        """Test Dr. filter is case insensitive."""
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "DR. MARY", "last_name": "Wilson"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Regular", "last_name": "Person"}
+        )
+
+        response = await authenticated_client.get("/api/v1/persons/?dr_filter=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["first_name"] == "DR. MARY"
+
+    async def test_dr_filter_with_space(self, authenticated_client: AsyncClient):
+        """Test Dr. filter matches 'Dr ' (with space) not just 'Dr.'"""
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Dr Smith", "last_name": "Johnson"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Alice", "last_name": "Dr Brown"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Drew", "last_name": "NotADoctor"}  # Should NOT match
+        )
+
+        response = await authenticated_client.get("/api/v1/persons/?dr_filter=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        first_names = [p["first_name"] for p in data]
+        assert "Dr Smith" in first_names
+        assert "Alice" in first_names
+        assert "Drew" not in first_names  # "Drew" starts with "Dr" but not "Dr." or "Dr "
+
+    async def test_sort_by_first_name(self, authenticated_client: AsyncClient):
+        """Test sorting by first name."""
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Zoe", "last_name": "Adams"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Alice", "last_name": "Wilson"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Mike", "last_name": "Brown"}
+        )
+
+        response = await authenticated_client.get("/api/v1/persons/?sort_by=first")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 3
+        assert data[0]["first_name"] == "Alice"
+        assert data[1]["first_name"] == "Mike"
+        assert data[2]["first_name"] == "Zoe"
+
+    async def test_sort_by_last_name(self, authenticated_client: AsyncClient):
+        """Test sorting by last name (default)."""
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Zoe", "last_name": "Wilson"}
+        )
+        await authenticated_client.post(
+            "/api/v1/persons/", json={"first_name": "Alice", "last_name": "Adams"}
+        )
+
+        response = await authenticated_client.get("/api/v1/persons/?sort_by=last")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["last_name"] == "Adams"
+        assert data[1]["last_name"] == "Wilson"
+
+    async def test_pagination(self, authenticated_client: AsyncClient):
+        """Test pagination with skip and limit."""
+        # Create 5 persons
+        for i in range(5):
+            await authenticated_client.post(
+                "/api/v1/persons/", json={"first_name": f"Person{i}", "last_name": f"Last{i}"}
+            )
+
+        # Get first page (2 items)
+        response = await authenticated_client.get("/api/v1/persons/?limit=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+
+        # Get second page
+        response = await authenticated_client.get("/api/v1/persons/?skip=2&limit=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+
+        # Get last page
+        response = await authenticated_client.get("/api/v1/persons/?skip=4&limit=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+
     async def test_update_person(self, authenticated_client: AsyncClient):
         """Test updating a person."""
         # Create a person

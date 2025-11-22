@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 
 from app.database import get_db
@@ -128,3 +129,33 @@ async def change_password(
     await db.flush()
 
     return {"message": "Password changed successfully"}
+
+
+class UserSearchResult(BaseModel):
+    id: int
+    username: str
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/users", response_model=list[UserSearchResult])
+async def search_users(
+    prefix: str = Query("", description="Username prefix to search for"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Search users by username prefix for sharing autocomplete."""
+    if not prefix:
+        return []
+
+    query = select(User).where(
+        User.username.ilike(f"{prefix}%"),
+        User.id != current_user.id,
+        User.is_active == True,
+    ).limit(10)
+
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    return [UserSearchResult(id=u.id, username=u.username) for u in users]

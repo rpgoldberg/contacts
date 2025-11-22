@@ -48,10 +48,18 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export async function getPersons(params?: {
   search?: string;
   relation?: string;
+  dr_filter?: boolean;
+  sort_by?: "first" | "last";
+  skip?: number;
+  limit?: number;
 }): Promise<PersonListItem[]> {
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.set("search", params.search);
   if (params?.relation) searchParams.set("relation", params.relation);
+  if (params?.dr_filter) searchParams.set("dr_filter", "true");
+  if (params?.sort_by) searchParams.set("sort_by", params.sort_by);
+  if (params?.skip !== undefined) searchParams.set("skip", String(params.skip));
+  if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
   const query = searchParams.toString();
   return fetchApi<PersonListItem[]>(`/persons/${query ? `?${query}` : ""}`);
 }
@@ -198,4 +206,14 @@ export async function unshareWith(username: string): Promise<UserInfo> {
   return fetchApi<UserInfo>(`/auth/share/${username}`, {
     method: "DELETE",
   });
+}
+
+export interface UserSearchResult {
+  id: number;
+  username: string;
+}
+
+export async function searchUsers(prefix: string): Promise<UserSearchResult[]> {
+  if (!prefix) return [];
+  return fetchApi<UserSearchResult[]>(`/auth/users?prefix=${encodeURIComponent(prefix)}`);
 }
