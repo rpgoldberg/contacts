@@ -1,8 +1,13 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.address import Address
+    from app.models.communication import Communication
+    from app.models.attribute import Attribute
 
 
 class Person(Base):

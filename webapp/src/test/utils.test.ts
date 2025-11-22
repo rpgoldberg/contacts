@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, formatDateShort, calculateAge, cn } from "@/lib/utils";
+import { formatDate, formatDateShort, calculateAge, calculateYears, cn } from "@/lib/utils";
 
 describe("formatDate", () => {
   it("formats a valid date string", () => {
@@ -52,5 +52,35 @@ describe("cn", () => {
 
   it("merges tailwind classes correctly", () => {
     expect(cn("px-2", "px-4")).toBe("px-4");
+  });
+});
+
+describe("formatDateShort edge cases", () => {
+  it("returns original string for invalid date", () => {
+    expect(formatDateShort("not-a-date")).toBe("not-a-date");
+  });
+});
+
+describe("calculateYears", () => {
+  it("returns null for null input", () => {
+    expect(calculateYears(null)).toBeNull();
+  });
+
+  it("returns null for undefined input", () => {
+    expect(calculateYears(undefined)).toBeNull();
+  });
+
+  it("returns null for placeholder years (5000)", () => {
+    expect(calculateYears("5000-05-15")).toBeNull();
+  });
+
+  it("calculates years for valid date", () => {
+    const years = calculateYears("2000-01-01");
+    expect(years).toBeGreaterThan(20);
+    expect(years).toBeLessThan(30);
+  });
+
+  it("returns NaN for invalid date string", () => {
+    expect(calculateYears("invalid")).toBeNaN();
   });
 });

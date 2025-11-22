@@ -1,4 +1,3 @@
-from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Boolean, ForeignKey, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base

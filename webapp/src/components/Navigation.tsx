@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Calendar, Plus, LogOut } from "lucide-react";
+import { Users, Calendar, Plus, LogOut, Key } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { PasswordChangeModal } from "./PasswordChangeModal";
 import { useLogout } from "./AuthProvider";
 import { isAuthenticated } from "@/lib/auth";
 
@@ -17,6 +19,7 @@ export function Navigation() {
   const pathname = usePathname();
   const logout = useLogout();
   const authed = typeof window !== 'undefined' && isAuthenticated();
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   // Don't show nav on login page
   if (pathname === '/login') {
@@ -63,17 +66,30 @@ export function Navigation() {
               <span className="hidden sm:inline">Add Contact</span>
             </Link>
             {authed && (
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              <>
+                <button
+                  onClick={() => setShowPasswordChange(true)}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                  title="Change password"
+                >
+                  <Key className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
             )}
           </div>
         </div>
       </div>
+      <PasswordChangeModal
+        isOpen={showPasswordChange}
+        onClose={() => setShowPasswordChange(false)}
+      />
     </header>
   );
 }

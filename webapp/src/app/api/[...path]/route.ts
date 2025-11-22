@@ -66,8 +66,10 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
   }
 
   try {
+    console.log(`[API Proxy] ${request.method} ${url}`);
     const response = await fetch(url, fetchOptions);
     const data = await response.text();
+    console.log(`[API Proxy] Response: ${response.status} (${data.length} bytes)`);
 
     return new NextResponse(data, {
       status: response.status,
@@ -76,9 +78,10 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
       },
     });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('[API Proxy] Error:', error);
+    console.error('[API Proxy] BACKEND_URL:', BACKEND_URL);
     return NextResponse.json(
-      { error: 'Backend unavailable' },
+      { error: 'Backend unavailable', backend: BACKEND_URL },
       { status: 502 }
     );
   }

@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta
 from typing import Optional
 import hashlib
-import secrets
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials

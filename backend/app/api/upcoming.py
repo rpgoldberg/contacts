@@ -1,7 +1,7 @@
-from datetime import date, timedelta
+from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, extract, or_, and_
+from sqlalchemy import select
 from pydantic import BaseModel
 
 from app.database import get_db

@@ -164,3 +164,14 @@ export async function getUpcomingAnniversaries(days = 30): Promise<UpcomingEvent
 export async function getUpcomingAll(days = 30): Promise<UpcomingEvent[]> {
   return fetchApi<UpcomingEvent[]>(`/upcoming/all?days=${days}`);
 }
+
+// Auth
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return fetchApi<void>("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+}
