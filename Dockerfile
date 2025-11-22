@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY webapp/ .
 
 # Build-time env for API URL - set in Coolify
-ARG NEXT_PUBLIC_API_URL=https://contacts-api.mindsignals1.com/api/v1
+ARG NEXT_PUBLIC_API_URL=https://api.contacts.mindsignals1.com/api/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build

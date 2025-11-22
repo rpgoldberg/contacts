@@ -34,7 +34,7 @@ android {
                 "proguard-rules.pro"
             )
             // Production API URL
-            buildConfigField("String", "API_BASE_URL", "\"https://contacts-api.mindsignals1.com/api/v1\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://api.contacts.mindsignals1.com/api/v1\"")
         }
     }
     compileOptions {
