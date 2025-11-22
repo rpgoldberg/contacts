@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Calendar, Plus, LogOut, Key } from "lucide-react";
+import { Users, Calendar, Plus, LogOut, Lock, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { PasswordChangeModal } from "./PasswordChangeModal";
+import { SharingModal } from "./SharingModal";
 import { useLogout } from "./AuthProvider";
 import { isAuthenticated } from "@/lib/auth";
 
@@ -20,6 +21,7 @@ export function Navigation() {
   const logout = useLogout();
   const authed = typeof window !== 'undefined' && isAuthenticated();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [showSharing, setShowSharing] = useState(false);
 
   // Don't show nav on login page
   if (pathname === '/login') {
@@ -57,7 +59,6 @@ export function Navigation() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               href="/contacts/new"
               className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -65,14 +66,22 @@ export function Navigation() {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Contact</span>
             </Link>
+            <ThemeToggle />
             {authed && (
               <>
+                <button
+                  onClick={() => setShowSharing(true)}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                  title="Sharing settings"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
                 <button
                   onClick={() => setShowPasswordChange(true)}
                   className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
                   title="Change password"
                 >
-                  <Key className="w-4 h-4" />
+                  <Lock className="w-4 h-4" />
                 </button>
                 <button
                   onClick={logout}
@@ -89,6 +98,10 @@ export function Navigation() {
       <PasswordChangeModal
         isOpen={showPasswordChange}
         onClose={() => setShowPasswordChange(false)}
+      />
+      <SharingModal
+        isOpen={showSharing}
+        onClose={() => setShowSharing(false)}
       />
     </header>
   );

@@ -175,3 +175,27 @@ export async function changePassword(currentPassword: string, newPassword: strin
     }),
   });
 }
+
+export interface UserInfo {
+  id: number;
+  username: string;
+  is_active: boolean;
+  shared_with: string[];
+}
+
+export async function getCurrentUser(): Promise<UserInfo> {
+  return fetchApi<UserInfo>("/auth/me");
+}
+
+export async function shareWith(username: string): Promise<UserInfo> {
+  return fetchApi<UserInfo>("/auth/share", {
+    method: "POST",
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function unshareWith(username: string): Promise<UserInfo> {
+  return fetchApi<UserInfo>(`/auth/share/${username}`, {
+    method: "DELETE",
+  });
+}

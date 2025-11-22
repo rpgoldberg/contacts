@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,15 +36,21 @@ export default function ContactDetailPage() {
     enabled: !isNaN(id),
   });
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const deleteMutation = useMutation({
     mutationFn: () => deletePerson(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["persons"] });
       router.push("/");
     },
+    onError: (error) => {
+      setDeleteError(error instanceof Error ? error.message : "Failed to delete contact");
+    },
   });
 
   const handleDelete = () => {
+    setDeleteError(null);
     if (confirm("Are you sure you want to delete this contact? This cannot be undone.")) {
       deleteMutation.mutate();
     }
@@ -79,6 +86,13 @@ export default function ContactDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Delete Error */}
+      {deleteError && (
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl">
+          {deleteError}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <Link
