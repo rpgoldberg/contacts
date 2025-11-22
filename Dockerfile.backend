@@ -1,5 +1,5 @@
 # Production Dockerfile for Coolify backend deployment
-# API served on port 80 for Traefik routing to contacts-api.mindsignals1.com
+# Internal API on port 8000 (accessed via webapp proxy)
 
 FROM python:3.12-slim
 
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -24,7 +25,7 @@ COPY backend/scripts/ scripts/
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Coolify expects port 80
-EXPOSE 80
+# Internal port 8000
+EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
