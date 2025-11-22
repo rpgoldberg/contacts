@@ -1,0 +1,4 @@
+#!/bin/sh
+# Gradle wrapper script placeholder
+# In production, use the actual Gradle wrapper from gradle init
+exec gradle "$@"

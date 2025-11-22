@@ -1,0 +1,48 @@
+# Production docker-compose for Coolify deployment
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-contacts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-contacts}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-contacts}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-contacts}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-contacts}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.contacts-api.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.services.contacts-api.loadbalancer.server.port=8000"
+
+  webapp:
+    build:
+      context: ./webapp
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    environment:
+      NEXT_PUBLIC_API_URL: ${API_URL}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.contacts-web.rule=Host(`${WEB_DOMAIN}`)"
+      - "traefik.http.services.contacts-web.loadbalancer.server.port=3000"
+
+volumes:
+  postgres_data:
