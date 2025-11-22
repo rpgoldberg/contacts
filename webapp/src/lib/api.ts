@@ -9,7 +9,10 @@ import type {
   UpcomingEvent,
 } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// Use local proxy in production, direct API in development
+const API_URL = typeof window !== 'undefined'
+  ? "/api"  // Browser: use Next.js API proxy
+  : (process.env.BACKEND_URL || "http://localhost:8000") + "/api/v1";  // Server-side
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {

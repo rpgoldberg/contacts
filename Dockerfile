@@ -16,10 +16,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY webapp/ .
 
-# Build-time env for API URL - set in Coolify
-ARG NEXT_PUBLIC_API_URL=https://api.contacts.mindsignals1.com/api/v1
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -45,5 +41,8 @@ EXPOSE 80
 
 ENV PORT=80
 ENV HOSTNAME="0.0.0.0"
+# Set BACKEND_URL in Coolify to point to backend container
+# e.g., http://backend-container:80
+ENV BACKEND_URL=http://localhost:8000
 
 CMD ["node", "server.js"]
