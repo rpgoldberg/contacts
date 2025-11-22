@@ -2,12 +2,12 @@ name: Webapp CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'webapp/**'
       - '.github/workflows/webapp.yml'
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - 'webapp/**'
       - '.github/workflows/webapp.yml'
