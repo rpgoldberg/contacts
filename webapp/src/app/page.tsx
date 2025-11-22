@@ -127,7 +127,7 @@ export default function HomePage() {
               : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           }`}
         >
-          Dr. Only
+          Filter: Dr. Only
         </button>
       </div>
 
@@ -154,7 +154,7 @@ export default function HomePage() {
         <>
           <div className="grid gap-3 sm:grid-cols-2">
             {contacts.map((contact) => (
-              <ContactCard key={contact.id} contact={contact} />
+              <ContactCard key={contact.id} contact={contact} sortBy={sortBy} />
             ))}
           </div>
 

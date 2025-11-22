@@ -9,11 +9,17 @@ import { cn } from "@/lib/utils";
 
 interface ContactCardProps {
   contact: PersonListItem;
+  sortBy?: "first" | "last";
 }
 
-export function ContactCard({ contact }: ContactCardProps) {
+export function ContactCard({ contact, sortBy = "last" }: ContactCardProps) {
   const age = calculateAge(contact.birth_date);
   const relationLabel = contact.relation ? RELATION_LABELS[contact.relation] : null;
+
+  // Format name based on sort order
+  const displayName = sortBy === "first"
+    ? [contact.first_name, contact.middle_initial, contact.last_name].filter(Boolean).join(" ")
+    : contact.display_name; // Backend default: "Last, First M"
 
   return (
     <Link
@@ -26,7 +32,7 @@ export function ContactCard({ contact }: ContactCardProps) {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-            {contact.display_name}
+            {displayName}
           </h3>
           <div className="flex flex-wrap gap-2 mt-1">
             {relationLabel && (
