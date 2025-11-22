@@ -8,6 +8,7 @@ import type {
   LookupCode,
   UpcomingEvent,
 } from "@/types";
+import { getAuthHeader } from "./auth";
 
 // Use local proxy in production, direct API in development
 const API_URL = typeof window !== 'undefined'
@@ -15,10 +16,19 @@ const API_URL = typeof window !== 'undefined'
   : (process.env.BACKEND_URL || "http://localhost:8000") + "/api/v1";  // Server-side
 
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  const authHeader = getAuthHeader();
+  if (authHeader) {
+    headers["Authorization"] = authHeader;
+  }
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      ...headers,
       ...options?.headers,
     },
   });

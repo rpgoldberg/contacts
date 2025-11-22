@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Calendar, Plus } from "lucide-react";
+import { Users, Calendar, Plus, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useLogout } from "./AuthProvider";
+import { isAuthenticated } from "@/lib/auth";
 
 const navItems = [
   { href: "/", label: "Contacts", icon: Users },
@@ -13,6 +15,13 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const logout = useLogout();
+  const authed = typeof window !== 'undefined' && isAuthenticated();
+
+  // Don't show nav on login page
+  if (pathname === '/login') {
+    return null;
+  }
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -44,14 +53,25 @@ export function Navigation() {
               })}
             </nav>
           </div>
-          <ThemeToggle />
-          <Link
-            href="/contacts/new"
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Contact</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/contacts/new"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Contact</span>
+            </Link>
+            {authed && (
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>
