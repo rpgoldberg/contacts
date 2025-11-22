@@ -9,8 +9,10 @@ import {
 } from "@/lib/api";
 
 // Mock auth
+const mockHandleSessionExpired = vi.fn();
 vi.mock("@/lib/auth", () => ({
   getAuthHeader: () => "Basic dGVzdDp0ZXN0",
+  handleSessionExpired: () => mockHandleSessionExpired(),
 }));
 
 // Mock fetch
@@ -122,14 +124,19 @@ describe("API module", () => {
       await expect(getPerson(999)).rejects.toThrow("API Error: 404 Not Found");
     });
 
-    it("throws on 401 unauthorized", async () => {
+    it("handles 401 by triggering session expiry handler", async () => {
+      mockHandleSessionExpired.mockClear();
+
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         statusText: "Unauthorized",
       });
 
-      await expect(getPersons()).rejects.toThrow("API Error: 401 Unauthorized");
+      await expect(getPersons()).rejects.toThrow("Session expired");
+
+      // Should call handleSessionExpired which clears credentials and redirects
+      expect(mockHandleSessionExpired).toHaveBeenCalled();
     });
   });
 

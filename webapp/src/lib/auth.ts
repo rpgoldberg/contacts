@@ -39,3 +39,11 @@ export function getAuthHeader(): string | null {
 export function isAuthenticated(): boolean {
   return getStoredCredentials() !== null;
 }
+
+export function handleSessionExpired(): void {
+  clearCredentials();
+  // Redirect to login - works in browser context
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}

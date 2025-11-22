@@ -8,7 +8,7 @@ import type {
   LookupCode,
   UpcomingEvent,
 } from "@/types";
-import { getAuthHeader } from "./auth";
+import { getAuthHeader, handleSessionExpired } from "./auth";
 
 // Use local proxy in production, direct API in development
 const API_URL = typeof window !== 'undefined'
@@ -34,6 +34,11 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
+    // Session expired or invalid credentials - redirect to login
+    if (response.status === 401) {
+      handleSessionExpired();
+      throw new Error("Session expired");
+    }
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
 

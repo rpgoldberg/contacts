@@ -5,6 +5,7 @@ import {
   clearCredentials,
   getAuthHeader,
   isAuthenticated,
+  handleSessionExpired,
 } from "@/lib/auth";
 
 // Mock localStorage
@@ -102,6 +103,29 @@ describe("Auth module", () => {
       storeCredentials({ username: "testuser", password: "testpass" });
       clearCredentials();
       expect(isAuthenticated()).toBe(false);
+    });
+  });
+
+  describe("handleSessionExpired", () => {
+    it("clears credentials and redirects to login", () => {
+      // Store credentials first
+      storeCredentials({ username: "testuser", password: "testpass" });
+
+      // Mock window.location
+      const mockLocation = { href: "" };
+      Object.defineProperty(window, "location", {
+        value: mockLocation,
+        writable: true,
+        configurable: true,
+      });
+
+      handleSessionExpired();
+
+      // Should clear credentials
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith("contacts_auth");
+
+      // Should redirect to login
+      expect(mockLocation.href).toBe("/login");
     });
   });
 });
