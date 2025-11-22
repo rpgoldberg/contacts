@@ -2,7 +2,6 @@
 name = "contacts-api"
 version = "1.0.0"
 description = "Personal Contacts Management API"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.109.0",
@@ -42,3 +41,6 @@ line-length = 100
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

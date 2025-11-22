@@ -21,12 +21,14 @@ services:
       DATABASE_URL: postgresql+asyncpg://contacts:contacts@db:5432/contacts
       CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://webapp:3000"]'
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app:ro
+      - ./backend/scripts:/app/scripts:ro
+      - /tmp/DatabaseExport:/tmp/DatabaseExport:ro
 
   webapp:
     build: ./webapp

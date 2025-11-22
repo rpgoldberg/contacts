@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import Base
 from app.models.user import User
@@ -36,7 +37,7 @@ async def setup_users(database_url: str, users_config: list[dict], shares: list[
             password = user_config["password"]
 
             # Check if user exists
-            query = select(User).where(User.username == username)
+            query = select(User).where(User.username == username).options(selectinload(User.shared_with))
             result = await session.execute(query)
             existing = result.scalar_one_or_none()
 
@@ -54,14 +55,23 @@ async def setup_users(database_url: str, users_config: list[dict], shares: list[
                 created_users[username] = user
                 print(f"  Created user '{username}'")
 
-        # Configure sharing
+        # Configure sharing using direct SQL to avoid lazy loading issues
+        from sqlalchemy import text
         for owner_username, shared_with_username in shares:
             owner = created_users.get(owner_username)
             shared_with = created_users.get(shared_with_username)
 
             if owner and shared_with:
-                if shared_with not in owner.shared_with:
-                    owner.shared_with.append(shared_with)
+                # Check if already shared
+                check = await session.execute(
+                    text("SELECT 1 FROM user_shares WHERE owner_id = :oid AND shared_with_id = :sid"),
+                    {"oid": owner.id, "sid": shared_with.id}
+                )
+                if check.scalar() is None:
+                    await session.execute(
+                        text("INSERT INTO user_shares (owner_id, shared_with_id) VALUES (:oid, :sid)"),
+                        {"oid": owner.id, "sid": shared_with.id}
+                    )
                     print(f"  Shared '{owner_username}' data with '{shared_with_username}'")
                 else:
                     print(f"  Already shared '{owner_username}' with '{shared_with_username}'")

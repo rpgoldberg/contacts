@@ -53,7 +53,7 @@ async def migrate_lookup_codes(session: AsyncSession, data_path: Path):
     csv_path = data_path / "tlkpCodes.csv"
     print(f"Importing lookup codes from {csv_path}...")
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="cp1252") as f:
         reader = csv.DictReader(f)
         count = 0
         for row in reader:
@@ -76,7 +76,7 @@ async def migrate_persons(session: AsyncSession, data_path: Path) -> dict[int, i
 
     id_mapping = {}
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="cp1252") as f:
         reader = csv.DictReader(f)
         count = 0
         for row in reader:
@@ -106,7 +106,7 @@ async def migrate_addresses(session: AsyncSession, data_path: Path, id_mapping: 
     csv_path = data_path / "tblAddress.csv"
     print(f"Importing addresses from {csv_path}...")
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="cp1252") as f:
         reader = csv.DictReader(f)
         count = 0
         skipped = 0
@@ -142,7 +142,7 @@ async def migrate_communications(session: AsyncSession, data_path: Path, id_mapp
     csv_path = data_path / "tblComm.csv"
     print(f"Importing communications from {csv_path}...")
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="cp1252") as f:
         reader = csv.DictReader(f)
         count = 0
         skipped = 0
@@ -174,7 +174,7 @@ async def migrate_attributes(session: AsyncSession, data_path: Path, id_mapping:
     csv_path = data_path / "tblAttrib.csv"
     print(f"Importing attributes from {csv_path}...")
 
-    with open(csv_path, newline="", encoding="utf-8") as f:
+    with open(csv_path, newline="", encoding="cp1252") as f:
         reader = csv.DictReader(f)
         count = 0
         skipped = 0
