@@ -39,7 +39,17 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
       handleSessionExpired();
       throw new Error("Session expired");
     }
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Try to get error detail from response body
+    let detail = response.statusText;
+    try {
+      const body = await response.json();
+      if (body.detail) {
+        detail = body.detail;
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+    throw new Error(`API Error: ${response.status} ${detail}`);
   }
 
   if (response.status === 204) {

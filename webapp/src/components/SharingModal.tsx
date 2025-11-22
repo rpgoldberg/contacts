@@ -99,6 +99,10 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
       if (err instanceof Error) {
         if (err.message.includes("404")) {
           setError("User not found");
+        } else if (err.message.includes("Cannot share with yourself")) {
+          setError("Cannot share with yourself");
+        } else if (err.message.includes("Already shared")) {
+          setError("Already shared with this user");
         } else if (err.message.includes("400")) {
           setError("Cannot share with that user");
         } else {
