@@ -459,3 +459,22 @@ class TestUserSearch:
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 0
+
+    async def test_search_users_excludes_already_shared(
+        self,
+        authenticated_client: AsyncClient,
+        other_user,
+    ):
+        """Search results exclude users already shared with."""
+        # First, share with otheruser
+        await authenticated_client.post(
+            "/api/v1/auth/share",
+            json={"username": "otheruser"}
+        )
+
+        # Now search - otheruser should not appear
+        response = await authenticated_client.get("/api/v1/auth/users?prefix=other")
+        assert response.status_code == 200
+        data = response.json()
+        usernames = [u["username"] for u in data]
+        assert "otheruser" not in usernames

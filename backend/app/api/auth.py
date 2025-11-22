@@ -149,9 +149,13 @@ async def search_users(
     if not prefix:
         return []
 
+    # Get IDs of users already shared with
+    shared_ids = [u.id for u in current_user.shared_with]
+
     query = select(User).where(
         User.username.ilike(f"{prefix}%"),
         User.id != current_user.id,
+        User.id.notin_(shared_ids) if shared_ids else True,
         User.is_active == True,
     ).limit(10)
 

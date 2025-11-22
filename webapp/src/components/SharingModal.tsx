@@ -42,13 +42,10 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
     debounceRef.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
+        // Server excludes self and already-shared users
         const results = await searchUsers(newUsername.trim());
-        // Filter out users already shared with
-        const filtered = results.filter(
-          (u) => !user?.shared_with.includes(u.username)
-        );
-        setSuggestions(filtered);
-        setShowSuggestions(filtered.length > 0);
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
       } catch {
         setSuggestions([]);
       } finally {
@@ -61,7 +58,7 @@ export function SharingModal({ isOpen, onClose }: SharingModalProps) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [newUsername, user?.shared_with]);
+  }, [newUsername]);
 
   const loadUser = async () => {
     setLoading(true);
