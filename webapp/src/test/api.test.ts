@@ -135,7 +135,7 @@ describe("API module", () => {
   });
 
   describe("error handling", () => {
-    it("throws on API error", async () => {
+    it("throws on 404 API error", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -158,6 +158,61 @@ describe("API module", () => {
 
       // Should call handleSessionExpired which clears credentials and redirects
       expect(mockHandleSessionExpired).toHaveBeenCalled();
+    });
+
+    it("handles 401 on any endpoint and triggers session expiry", async () => {
+      mockHandleSessionExpired.mockClear();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: "Unauthorized",
+      });
+
+      await expect(getPerson(1)).rejects.toThrow("Session expired");
+      expect(mockHandleSessionExpired).toHaveBeenCalled();
+    });
+
+    it("extracts error detail from response body when available", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: "Bad Request",
+        json: () => Promise.resolve({ detail: "Custom error message" }),
+      });
+
+      await expect(createPerson({})).rejects.toThrow("API Error: 400 Custom error message");
+    });
+
+    it("falls back to statusText when response body has no detail", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        json: () => Promise.resolve({}),
+      });
+
+      await expect(getPersons()).rejects.toThrow("API Error: 500 Internal Server Error");
+    });
+
+    it("handles 403 forbidden error", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: "Forbidden",
+      });
+
+      await expect(getPerson(1)).rejects.toThrow("API Error: 403 Forbidden");
+    });
+
+    it("handles 502 bad gateway error", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        statusText: "Bad Gateway",
+      });
+
+      await expect(deletePerson(1)).rejects.toThrow("API Error: 502 Bad Gateway");
     });
   });
 

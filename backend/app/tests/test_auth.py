@@ -407,6 +407,143 @@ class TestSharing:
         assert data[0]["name"] == "Person, Birthday"
 
 
+class TestDataIsolation:
+    """Test that user data is properly isolated between users."""
+
+    async def test_user_cannot_access_contact_by_guessing_id(
+        self,
+        authenticated_client: AsyncClient,
+        other_authenticated_client: AsyncClient,
+    ):
+        """User cannot access another user's contact even if they guess the ID."""
+        # Create contact as first user
+        response = await authenticated_client.post(
+            "/api/v1/persons/",
+            json={"first_name": "Secret", "last_name": "Contact"}
+        )
+        contact_id = response.json()["id"]
+
+        # Other user tries to access by ID - should get 404, not the contact
+        response = await other_authenticated_client.get(f"/api/v1/persons/{contact_id}")
+        assert response.status_code == 404
+
+        # Other user tries to update - should get 404
+        response = await other_authenticated_client.put(
+            f"/api/v1/persons/{contact_id}",
+            json={"first_name": "Hacked"}
+        )
+        assert response.status_code == 404
+
+        # Other user tries to delete - should get 404
+        response = await other_authenticated_client.delete(f"/api/v1/persons/{contact_id}")
+        assert response.status_code == 404
+
+    async def test_shared_access_revoked_after_unshare(
+        self,
+        authenticated_client: AsyncClient,
+        other_authenticated_client: AsyncClient,
+    ):
+        """After unsharing, user loses access to previously shared contacts."""
+        # Create contact
+        response = await authenticated_client.post(
+            "/api/v1/persons/",
+            json={"first_name": "Shared", "last_name": "Then Unshared"}
+        )
+        contact_id = response.json()["id"]
+
+        # Share with other user
+        await authenticated_client.post(
+            "/api/v1/auth/share",
+            json={"username": "otheruser"}
+        )
+
+        # Other user can access
+        response = await other_authenticated_client.get(f"/api/v1/persons/{contact_id}")
+        assert response.status_code == 200
+
+        # Unshare
+        await authenticated_client.delete("/api/v1/auth/share/otheruser")
+
+        # Other user can no longer access
+        response = await other_authenticated_client.get(f"/api/v1/persons/{contact_id}")
+        assert response.status_code == 404
+
+    async def test_contacts_count_only_includes_accessible(
+        self,
+        authenticated_client: AsyncClient,
+        other_authenticated_client: AsyncClient,
+    ):
+        """Pagination total only counts contacts user can access."""
+        # Create 3 contacts as first user
+        for i in range(3):
+            await authenticated_client.post(
+                "/api/v1/persons/",
+                json={"first_name": f"User1Contact{i}", "last_name": "Test"}
+            )
+
+        # Create 2 contacts as second user
+        for i in range(2):
+            await other_authenticated_client.post(
+                "/api/v1/persons/",
+                json={"first_name": f"User2Contact{i}", "last_name": "Test"}
+            )
+
+        # First user sees only their 3 contacts
+        response = await authenticated_client.get("/api/v1/persons/")
+        data = response.json()
+        assert data["total"] == 3
+
+        # Second user sees only their 2 contacts
+        response = await other_authenticated_client.get("/api/v1/persons/")
+        data = response.json()
+        assert data["total"] == 2
+
+    async def test_shared_user_cannot_reshare(
+        self,
+        authenticated_client: AsyncClient,
+        other_authenticated_client: AsyncClient,
+        client: AsyncClient,
+    ):
+        """User who has shared access cannot share that access with others."""
+        import base64
+
+        # Create a third user
+        await client.post(
+            "/api/v1/auth/register",
+            json={"username": "thirduser", "password": "thirdpass"}
+        )
+        third_creds = base64.b64encode(b"thirduser:thirdpass").decode()
+        third_headers = {"Authorization": f"Basic {third_creds}"}
+
+        # First user shares with second user
+        await authenticated_client.post(
+            "/api/v1/auth/share",
+            json={"username": "otheruser"}
+        )
+
+        # Second user tries to share first user's access with third user
+        # This should only share second user's OWN contacts, not first user's
+        response = await other_authenticated_client.post(
+            "/api/v1/auth/share",
+            json={"username": "thirduser"}
+        )
+        assert response.status_code == 200
+
+        # Create contact as first user
+        response = await authenticated_client.post(
+            "/api/v1/persons/",
+            json={"first_name": "FirstUser", "last_name": "Contact"}
+        )
+        contact_id = response.json()["id"]
+
+        # Third user should NOT see first user's contact
+        response = await client.get(
+            f"/api/v1/persons/{contact_id}",
+            headers=third_headers
+        )
+        assert response.status_code == 404
+
+
 class TestUserSearch:
     """Test user search for sharing autocomplete."""
 
