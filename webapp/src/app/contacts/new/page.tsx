@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
@@ -52,21 +52,14 @@ export default function NewContactPage() {
   const [communications, setCommunications] = useState<NewCommunication[]>([]);
   const [addresses, setAddresses] = useState<NewAddress[]>([]);
   const [attributes, setAttributes] = useState<NewAttribute[]>([]);
-  const [customAttributeTypes, setCustomAttributeTypes] = useState<string[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Combined attribute types: predefined + custom
-  const allAttributeTypes = useMemo(() => {
-    const existingTypes = attributes
-      .map((a) => a.attrib_type)
-      .filter((t) => t && !ATTRIBUTE_TYPE_OPTIONS.includes(t) && !customAttributeTypes.includes(t));
-    const combined = ATTRIBUTE_TYPE_OPTIONS.concat(customAttributeTypes).concat(existingTypes);
-    return Array.from(new Set(combined));
-  }, [attributes, customAttributeTypes]);
+  // Attribute type options: just the predefined list for new contacts
+  const allAttributeTypes = ATTRIBUTE_TYPE_OPTIONS;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
@@ -175,9 +168,6 @@ export default function NewContactPage() {
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
     setIsDirty(true);
-    if (field === "attrib_type" && value && !allAttributeTypes.includes(value)) {
-      setCustomAttributeTypes((prev) => [...prev, value]);
-    }
   };
 
   const removeAttribute = (index: number) => {

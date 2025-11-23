@@ -73,7 +73,6 @@ export default function EditContactPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [nameFieldsLocked, setNameFieldsLocked] = useState(true);
-  const [customAttributeTypes, setCustomAttributeTypes] = useState<string[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
@@ -97,14 +96,14 @@ export default function EditContactPage() {
     }
   }, [contact]);
 
-  // Combined attribute types: predefined + custom + any existing types from data
+  // Combined attribute types: predefined + any existing types from contact data
   const allAttributeTypes = useMemo(() => {
     const existingTypes = attributes
       .map((a) => a.attrib_type)
-      .filter((t): t is string => !!t && !ATTRIBUTE_TYPE_OPTIONS.includes(t) && !customAttributeTypes.includes(t));
-    const combined = ATTRIBUTE_TYPE_OPTIONS.concat(customAttributeTypes).concat(existingTypes);
+      .filter((t): t is string => !!t && !ATTRIBUTE_TYPE_OPTIONS.includes(t));
+    const combined = ATTRIBUTE_TYPE_OPTIONS.concat(existingTypes);
     return Array.from(new Set(combined));
-  }, [attributes, customAttributeTypes]);
+  }, [attributes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({
@@ -228,10 +227,6 @@ export default function EditContactPage() {
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
     setIsDirty(true);
-    // If this is a new custom attribute type, add it to the list
-    if (field === "attrib_type" && value && !allAttributeTypes.includes(value)) {
-      setCustomAttributeTypes((prev) => [...prev, value]);
-    }
   };
 
   const removeAttribute = (index: number) => {
@@ -377,7 +372,7 @@ export default function EditContactPage() {
 
           {/* Name Fields with Lock */}
           <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Name</span>
               <button
                 type="button"
