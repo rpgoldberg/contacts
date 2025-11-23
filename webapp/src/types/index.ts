@@ -98,3 +98,11 @@ export const ADDRESS_TYPE_LABELS: Record<string, string> = {
   W: "Work",
   O: "Other",
 };
+
+export const ATTRIBUTE_TYPE_OPTIONS: string[] = [
+  "Favorite Colors",
+  "Favorite Hobbies",
+  "Types of Pets",
+  "Clothes Sizes",
+  "Favorite Sports",
+];
