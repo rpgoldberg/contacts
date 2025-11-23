@@ -64,7 +64,8 @@ export default function NewContactPage() {
     const existingTypes = attributes
       .map((a) => a.attrib_type)
       .filter((t) => t && !ATTRIBUTE_TYPE_OPTIONS.includes(t) && !customAttributeTypes.includes(t));
-    return [...new Set([...ATTRIBUTE_TYPE_OPTIONS, ...customAttributeTypes, ...existingTypes])];
+    const combined = ATTRIBUTE_TYPE_OPTIONS.concat(customAttributeTypes).concat(existingTypes);
+    return Array.from(new Set(combined));
   }, [attributes, customAttributeTypes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
