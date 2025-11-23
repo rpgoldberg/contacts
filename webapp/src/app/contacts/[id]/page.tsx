@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPerson, deletePerson } from "@/lib/api";
+import { isAuthenticated } from "@/lib/auth";
 import {
   User,
   MapPin,
@@ -30,10 +31,17 @@ export default function ContactDetailPage() {
   const queryClient = useQueryClient();
   const id = Number(params.id);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
   const { data: contact, isLoading, error } = useQuery({
     queryKey: ["person", id],
     queryFn: () => getPerson(id),
-    enabled: !isNaN(id),
+    enabled: !isNaN(id) && isAuthenticated(),
   });
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -65,10 +73,20 @@ export default function ContactDetailPage() {
   }
 
   if (error || !contact) {
+    const errorMessage = error instanceof Error ? error.message : "";
+    const isSessionError = errorMessage.includes("Session expired") || errorMessage.includes("401");
+    const isNotFound = errorMessage.includes("404");
+
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl">
-          Contact not found or failed to load.
+          {isSessionError ? (
+            <>Session expired. Please <Link href="/login" className="underline font-medium">log in</Link> again.</>
+          ) : isNotFound ? (
+            "Contact not found."
+          ) : (
+            "Failed to load contact. Please try again."
+          )}
         </div>
         <Link
           href="/"

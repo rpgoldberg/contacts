@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPerson, updatePerson } from "@/lib/api";
+import { isAuthenticated } from "@/lib/auth";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { RELATION_LABELS } from "@/types";
 
@@ -14,10 +15,17 @@ export default function EditContactPage() {
   const queryClient = useQueryClient();
   const id = Number(params.id);
 
-  const { data: contact, isLoading: loadingContact } = useQuery({
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
+  const { data: contact, isLoading: loadingContact, error } = useQuery({
     queryKey: ["person", id],
     queryFn: () => getPerson(id),
-    enabled: !isNaN(id),
+    enabled: !isNaN(id) && isAuthenticated(),
   });
 
   const [formData, setFormData] = useState({
@@ -82,11 +90,18 @@ export default function EditContactPage() {
     );
   }
 
-  if (!contact) {
+  if (error || !contact) {
+    const errorMessage = error instanceof Error ? error.message : "";
+    const isSessionError = errorMessage.includes("Session expired") || errorMessage.includes("401");
+
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl">
-          Contact not found.
+          {isSessionError ? (
+            <>Session expired. Please <Link href="/login" className="underline font-medium">log in</Link> again.</>
+          ) : (
+            "Contact not found."
+          )}
         </div>
         <Link
           href="/"
