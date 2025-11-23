@@ -25,21 +25,22 @@ describe("API module", () => {
   });
 
   describe("getPersons", () => {
-    it("fetches persons list", async () => {
+    it("fetches persons list with paginated response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve([{ id: 1, display_name: "Test" }]),
+        json: () => Promise.resolve({ items: [{ id: 1, display_name: "Test" }], total: 1 }),
       });
 
       const result = await getPersons();
-      expect(result).toHaveLength(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(1);
       expect(mockFetch).toHaveBeenCalledWith("/api/persons/", expect.any(Object));
     });
 
     it("includes search params", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve([]),
+        json: () => Promise.resolve({ items: [], total: 0 }),
       });
 
       await getPersons({ search: "john" });
@@ -49,11 +50,31 @@ describe("API module", () => {
     it("includes relation filter", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve([]),
+        json: () => Promise.resolve({ items: [], total: 0 }),
       });
 
       await getPersons({ relation: "FAM" });
       expect(mockFetch).toHaveBeenCalledWith("/api/persons/?relation=FAM", expect.any(Object));
+    });
+
+    it("includes pagination params", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ items: [], total: 100 }),
+      });
+
+      await getPersons({ skip: 50, limit: 25 });
+      expect(mockFetch).toHaveBeenCalledWith("/api/persons/?skip=50&limit=25", expect.any(Object));
+    });
+
+    it("includes sort and dr_filter params", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ items: [], total: 5 }),
+      });
+
+      await getPersons({ sort_by: "first", dr_filter: true });
+      expect(mockFetch).toHaveBeenCalledWith("/api/persons/?dr_filter=true&sort_by=first", expect.any(Object));
     });
   });
 
