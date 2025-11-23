@@ -3,6 +3,7 @@ from app.schemas.person import (
     PersonUpdate,
     PersonResponse,
     PersonListResponse,
+    PersonListPaginatedResponse,
     PersonDetailResponse,
 )
 from app.schemas.address import AddressCreate, AddressUpdate, AddressResponse
@@ -15,6 +16,7 @@ __all__ = [
     "PersonUpdate",
     "PersonResponse",
     "PersonListResponse",
+    "PersonListPaginatedResponse",
     "PersonDetailResponse",
     "AddressCreate",
     "AddressUpdate",

@@ -39,11 +39,17 @@ class PersonListResponse(BaseModel):
 
     id: int
     first_name: Optional[str] = None
+    middle_initial: Optional[str] = None
     last_name: Optional[str] = None
     display_name: str
     birth_date: Optional[date] = None
     anniversary_date: Optional[date] = None
     relation: Optional[str] = None
+
+
+class PersonListPaginatedResponse(BaseModel):
+    items: list[PersonListResponse]
+    total: int
 
 
 class PersonDetailResponse(PersonResponse):

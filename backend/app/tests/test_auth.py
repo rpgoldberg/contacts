@@ -52,8 +52,9 @@ class TestAuthorization:
         response = await authenticated_client.get("/api/v1/persons/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["first_name"] == "My"
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["first_name"] == "My"
 
     async def test_user_cannot_see_other_user_contacts(
         self,
@@ -73,7 +74,8 @@ class TestAuthorization:
         response = await other_authenticated_client.get("/api/v1/persons/")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 0
+        assert data["total"] == 0
+        assert len(data["items"]) == 0
 
         # Other user should not be able to get this contact directly
         response = await other_authenticated_client.get(f"/api/v1/persons/{contact_id}")
@@ -317,7 +319,9 @@ class TestSharing:
 
         # Before sharing, otheruser cannot see the contact
         response = await other_authenticated_client.get("/api/v1/persons/")
-        assert len(response.json()) == 0
+        data = response.json()
+        assert data["total"] == 0
+        assert len(data["items"]) == 0
 
         # Share with otheruser
         await authenticated_client.post(
@@ -328,8 +332,9 @@ class TestSharing:
         # Now otheruser should see testuser's contacts
         response = await other_authenticated_client.get("/api/v1/persons/")
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["first_name"] == "Shared"
+        assert data["total"] == 1
+        assert len(data["items"]) == 1
+        assert data["items"][0]["first_name"] == "Shared"
 
         # And can get the contact directly
         response = await other_authenticated_client.get(f"/api/v1/persons/{contact_id}")

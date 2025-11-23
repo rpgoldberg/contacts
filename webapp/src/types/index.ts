@@ -22,11 +22,17 @@ export interface PersonDetail extends Person {
 export interface PersonListItem {
   id: number;
   first_name: string | null;
+  middle_initial: string | null;
   last_name: string | null;
   display_name: string;
   birth_date: string | null;
   anniversary_date: string | null;
   relation: string | null;
+}
+
+export interface PersonListPaginatedResponse {
+  items: PersonListItem[];
+  total: number;
 }
 
 export interface Address {

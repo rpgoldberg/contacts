@@ -2,6 +2,7 @@ import type {
   Person,
   PersonDetail,
   PersonListItem,
+  PersonListPaginatedResponse,
   Address,
   Communication,
   Attribute,
@@ -67,7 +68,7 @@ export async function getPersons(params?: {
   sort_by?: "first" | "last";
   skip?: number;
   limit?: number;
-}): Promise<PersonListItem[]> {
+}): Promise<PersonListPaginatedResponse> {
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.set("search", params.search);
   if (params?.relation) searchParams.set("relation", params.relation);
@@ -76,7 +77,7 @@ export async function getPersons(params?: {
   if (params?.skip !== undefined) searchParams.set("skip", String(params.skip));
   if (params?.limit !== undefined) searchParams.set("limit", String(params.limit));
   const query = searchParams.toString();
-  return fetchApi<PersonListItem[]>(`/persons/${query ? `?${query}` : ""}`);
+  return fetchApi<PersonListPaginatedResponse>(`/persons/${query ? `?${query}` : ""}`);
 }
 
 export async function getPerson(id: number): Promise<PersonDetail> {

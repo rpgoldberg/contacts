@@ -41,7 +41,7 @@ export default function HomePage() {
     setPage(0);
   }, [search, relation, drFilter, sortBy]);
 
-  const { data: contacts, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["persons", search, relation, drFilter, sortBy, page],
     queryFn: () => getPersons({
       search: search || undefined,
@@ -52,6 +52,10 @@ export default function HomePage() {
       limit: PAGE_SIZE,
     }),
   });
+
+  const contacts = data?.items;
+  const total = data?.total ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const handleSearch = useCallback((query: string) => {
     setSearch(query);
@@ -72,7 +76,7 @@ export default function HomePage() {
     localStorage.setItem(DR_FILTER_KEY, String(newValue));
   };
 
-  const hasNextPage = contacts && contacts.length === PAGE_SIZE;
+  const hasNextPage = page + 1 < totalPages;
   const hasPrevPage = page > 0;
 
   return (
@@ -80,9 +84,9 @@ export default function HomePage() {
       <div className="flex items-center gap-3 mb-6">
         <Users className="w-8 h-8 text-primary-600" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contacts</h1>
-        {contacts && (
+        {data && (
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            (Page {page + 1}{contacts.length > 0 ? `, showing ${contacts.length}` : ""})
+            ({total} total)
           </span>
         )}
       </div>
@@ -173,7 +177,7 @@ export default function HomePage() {
               Previous
             </button>
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Page {page + 1}
+              Page {page + 1} of {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => p + 1)}

@@ -11,14 +11,16 @@ from app.schemas import (
     PersonUpdate,
     PersonResponse,
     PersonListResponse,
+    PersonListPaginatedResponse,
     PersonDetailResponse,
 )
+from sqlalchemy import func
 from app.auth import get_current_user, get_accessible_user_ids
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[PersonListResponse])
+@router.get("/", response_model=PersonListPaginatedResponse)
 async def list_persons(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -30,24 +32,24 @@ async def list_persons(
     limit: int = Query(100, ge=1, le=500),
 ):
     """List all persons with optional filtering."""
+    from sqlalchemy import or_
+
     accessible_ids = get_accessible_user_ids(current_user)
 
-    query = select(Person).where(Person.owner_id.in_(accessible_ids))
+    # Base filter conditions
+    base_conditions = [Person.owner_id.in_(accessible_ids)]
 
     if search:
         search_term = f"%{search}%"
-        query = query.where(
-            (Person.first_name.ilike(search_term))
-            | (Person.last_name.ilike(search_term))
+        base_conditions.append(
+            (Person.first_name.ilike(search_term)) | (Person.last_name.ilike(search_term))
         )
 
     if relation:
-        query = query.where(Person.relation == relation)
+        base_conditions.append(Person.relation == relation)
 
     if dr_filter:
-        # Filter names starting with "Dr." or "Dr " (case insensitive)
-        from sqlalchemy import or_, func
-        query = query.where(
+        base_conditions.append(
             or_(
                 func.lower(Person.first_name).like("dr.%"),
                 func.lower(Person.first_name).like("dr %"),
@@ -55,6 +57,14 @@ async def list_persons(
                 func.lower(Person.last_name).like("dr %"),
             )
         )
+
+    # Get total count (before pagination)
+    count_query = select(func.count(Person.id)).where(*base_conditions)
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+
+    # Build main query with pagination
+    query = select(Person).where(*base_conditions)
 
     # Apply sorting
     if sort_by == "first":
@@ -66,7 +76,8 @@ async def list_persons(
 
     result = await db.execute(query)
     persons = result.scalars().all()
-    return persons
+
+    return PersonListPaginatedResponse(items=persons, total=total)
 
 
 @router.get("/{person_id}", response_model=PersonDetailResponse)
