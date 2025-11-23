@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { isAuthenticated, clearCredentials } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
@@ -37,9 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useLogout() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return () => {
     clearCredentials();
+    queryClient.clear();  // Clear all cached data to prevent leaking between users
     router.push('/login');
   };
 }
