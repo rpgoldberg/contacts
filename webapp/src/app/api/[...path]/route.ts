@@ -68,9 +68,14 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
   try {
     console.log(`[API Proxy] ${request.method} ${url}`);
     const response = await fetch(url, fetchOptions);
-    const data = await response.text();
-    console.log(`[API Proxy] Response: ${response.status} (${data.length} bytes)`);
+    console.log(`[API Proxy] Response: ${response.status}`);
 
+    // Handle 204 No Content properly - don't try to read body
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    const data = await response.text();
     return new NextResponse(data, {
       status: response.status,
       headers: {
